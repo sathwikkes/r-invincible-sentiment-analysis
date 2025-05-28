@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Invincible Sentiment Dashboard</title>
+  <!-- Plotly.js CDN -->
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <style>
+    .chart { width: 100%; height: 400px; margin-bottom: 2rem; }
+  </style>
+</head>
+<body>
+  <h1>Invincible Sentiment Dashboard</h1>
+
+  <div id="time-series" class="chart"></div>
+  <div id="distribution" class="chart"></div>
+  <div id="engagement-scatter" class="chart"></div>
+  <div id="by-flair" class="chart"></div>
+
+  <script>
+    // 1. Time Series: average sentiment by day
+    fetch('processed/avg_sentiment_by_day.json')
+      .then(r => r.json())
+      .then(data => {
+        const x = data.map(d => d.created_dt);
+        const y = data.map(d => d.avg_sentiment);
+        Plotly.newPlot('time-series', [{
+          x, y, type: 'scatter', mode: 'lines+markers',
+          name: 'Avg Sentiment'
+        }], { title: 'Sentiment Over Time' });
+      });
+
+    // 2. Distribution histogram
+    fetch('processed/sentiment_distribution.json')
+      .then(r => r.json())
+      .then(vals => {
+        Plotly.newPlot('distribution', [{
+          x: vals, type: 'histogram', nbinsx: 30
+        }], { title: 'Sentiment Distribution' });
+      });
+
+    // 3. Engagement vs Sentiment
+    fetch('processed/engagement_scatter.json')
+      .then(r => r.json())
+      .then(points => {
+        Plotly.newPlot('engagement-scatter', [{
+          x: points.map(p => p.compound),
+          y: points.map(p => p.score),
+          mode: 'markers',
+          text: points.map(p => `Comments: ${p.num_comments}`)
+        }], { title: 'Engagement (Upvotes) vs Sentiment',
+             xaxis:{title:'Compound'}, yaxis:{title:'Upvotes'} });
+      });
+
+    // 4. Sentiment by Flair (bar chart)
+    fetch('processed/sentiment_by_flair.json')
+      .then(r => r.json())
+      .then(data => {
+        Plotly.newPlot('by-flair', [{
+          x: data.map(d => d.link_flair_text),
+          y: data.map(d => d.avg_sentiment),
+          type: 'bar'
+        }], { title: 'Avg Sentiment by Flair' });
+      });
+
+    // …repeat for your other metrics
+  </script>
+</body>
+</html>
